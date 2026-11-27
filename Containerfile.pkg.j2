@@ -1,0 +1,55 @@
+ARG BASE_VERSION=15.1
+FROM ghcr.io/daemonless/base-exec:${BASE_VERSION}
+
+ARG FREEBSD_ARCH=amd64
+ARG PKG_NAME=tuwunel
+ARG PKG_VERSION=""
+ARG PACKAGES="${PKG_NAME}"
+ARG HEALTHCHECK_ENDPOINT="http://127.0.0.1:8008/_matrix/client/versions"
+
+ENV HEALTHCHECK_URL="${HEALTHCHECK_ENDPOINT}"
+
+LABEL org.opencontainers.image.title="{{ title }}" \
+      org.opencontainers.image.description="{{ description }}" \
+      org.opencontainers.image.source="{{ repo_url }}" \
+      org.opencontainers.image.url="{{ web_url }}" \
+      org.opencontainers.image.documentation="https://matrix-construct.github.io/tuwunel/" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.vendor="daemonless" \
+      org.opencontainers.image.authors="daemonless" \
+      io.daemonless.category="{{ category }}" \
+      {%- if ports %}
+io.daemonless.port="{{ ports[0].port }}" \
+      {%- endif %}
+{%- if volumes %}
+io.daemonless.volumes="{{ volumes | map(attribute='path') | join(',') }}" \
+      {%- endif %}
+io.daemonless.arch="${FREEBSD_ARCH}" \
+      io.daemonless.pkg-source="pkg" \
+      io.daemonless.pkg-name="${PKG_NAME}" \
+      io.daemonless.healthcheck-url="${HEALTHCHECK_ENDPOINT}" \
+      io.daemonless.packages="${PACKAGES}"
+
+RUN pkg update && \
+      pkg install -y ${PACKAGES} && \
+      pkg clean -ay && \
+      rm -rf /var/cache/pkg/* /var/db/pkg/repos/*
+
+RUN mkdir -p /app /config /data && \
+      pkg query %v ${PKG_NAME} > /app/version && \
+      chown -R bsd:bsd /app /config /data && \
+      chmod 0755 /app && \
+      chmod 0750 /config /data
+
+COPY root/ /
+RUN chmod +x /daemonless/init.d/* /daemonless/libexec/tuwunel /healthz
+
+CMD ["/daemonless/libexec/tuwunel"]
+
+{%- if ports %}
+EXPOSE {{ ports | map(attribute='port') | join(' ') }}
+{%- endif %}
+
+{%- if volumes %}
+VOLUME {{ volumes | map(attribute='path') | join(' ') }}
+{%- endif %}

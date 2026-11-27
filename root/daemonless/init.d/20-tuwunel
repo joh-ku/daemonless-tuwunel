@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+CONFIG_FILE="${TUWUNEL_CONFIG:-/config/tuwunel.toml}"
+DATA_DIR="${TUWUNEL_DATABASE_PATH:-/data}"
+EXAMPLE_CONFIG="/usr/local/share/tuwunel/tuwunel-example.toml"
+
+mkdir -p "$(dirname "$CONFIG_FILE")" "$DATA_DIR"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    if [ -f "$EXAMPLE_CONFIG" ]; then
+        cp "$EXAMPLE_CONFIG" "$CONFIG_FILE"
+    else
+        cat >"$CONFIG_FILE" <<EOF
+[global]
+server_name = "${TUWUNEL_SERVER_NAME:-matrix.example.org}"
+database_path = "${DATA_DIR}"
+address = "${TUWUNEL_ADDRESS:-0.0.0.0}"
+port = ${TUWUNEL_PORT:-[8008]}
+allow_registration = ${TUWUNEL_ALLOW_REGISTRATION:-false}
+EOF
+    fi
+fi
+
+chown -R bsd:bsd /config "$DATA_DIR"

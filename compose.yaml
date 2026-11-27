@@ -1,0 +1,70 @@
+name: tuwunel
+
+x-daemonless:
+  title: "Tuwunel"
+  category: "Infrastructure"
+  description: "High-performance Matrix homeserver written in Rust with embedded RocksDB storage, built from upstream source for FreeBSD."
+  icon: ":matrix:"
+  user: "bsd"
+  upstream_url: "https://github.com/matrix-construct/tuwunel"
+  project_url: "https://tuwunel.chat/"
+  source_url: "https://github.com/matrix-construct/tuwunel"
+  docs:
+    env:
+      TUWUNEL_SERVER_NAME: "Homeserver server name (e.g. matrix.example.org)"
+      TUWUNEL_ALLOW_REGISTRATION: "Allow public user registration (true or false)"
+  ports:
+    - container: 8008
+      host: 8008
+      protocol: tcp
+      description: "Matrix client-server and federation HTTP listener"
+  volumes:
+    - container: /config
+      description: "Configuration files (tuwunel.toml)"
+    - container: /data
+      description: "RocksDB database, signing keys, and media storage"
+  environment:
+    - name: TUWUNEL_SERVER_NAME
+      default: "matrix.example.org"
+      description: "Permanent Matrix homeserver domain (cannot be changed after first boot)"
+    - name: TUWUNEL_CONFIG
+      default: "/config/tuwunel.toml"
+      description: "Path to Tuwunel TOML configuration file"
+    - name: TUWUNEL_DATABASE_PATH
+      default: "/data"
+      description: "Path to RocksDB data directory"
+    - name: TUWUNEL_ADDRESS
+      default: "0.0.0.0"
+      description: "Listen address inside the container"
+    - name: TUWUNEL_PORT
+      default: "[8008]"
+      description: "Listen port array inside the container"
+    - name: TUWUNEL_ALLOW_REGISTRATION
+      default: "false"
+      description: "Enable or disable user registration"
+    - name: TUWUNEL_REGISTRATION_TOKEN
+      default: ""
+      description: "Optional registration token when registration is enabled"
+
+services:
+  tuwunel:
+    image: ghcr.io/daemonless/tuwunel:latest
+    container_name: tuwunel
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - TUWUNEL_SERVER_NAME=matrix.example.org
+      - TUWUNEL_ALLOW_REGISTRATION=false
+    volumes:
+      - /containers/tuwunel/config:/config
+      - /containers/tuwunel/data:/data
+    ports:
+      - "8008:8008"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8008/_matrix/client/versions || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped

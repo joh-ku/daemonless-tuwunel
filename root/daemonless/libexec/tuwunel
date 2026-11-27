@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+CONFIG_FILE="${TUWUNEL_CONFIG:-/config/tuwunel.toml}"
+
+export TUWUNEL_SERVER_NAME="${TUWUNEL_SERVER_NAME:-matrix.example.org}"
+export TUWUNEL_DATABASE_PATH="${TUWUNEL_DATABASE_PATH:-/data}"
+export TUWUNEL_ADDRESS="${TUWUNEL_ADDRESS:-0.0.0.0}"
+export TUWUNEL_PORT="${TUWUNEL_PORT:-[8008]}"
+
+exec /usr/local/bin/tuwunel -c "$CONFIG_FILE"
